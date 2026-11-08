@@ -1,0 +1,83 @@
+# History before v1.00
+
+This is the development history of Media Share Mapper before it moved to the house-style
+version numbering. Versions were renumbered at v1.00 (2026-11-07); see
+[CHANGELOG.md](../CHANGELOG.md) for everything since. File names below are as they were at the
+time: `shares.ps1`, `Setup-Credentials.ps1` and `Setup-AutoMapTask.ps1` are now all
+`src\Media-Share-Mapper.ps1`, and `Drive_Icons.reg` is now the icon settings in
+`config.local.json`. The repository was called `shares`.
+
+## [Unreleased, last changes before v1.00] - 2026-10-08
+
+### Added
+- `LICENSE` (MIT).
+- `Setup-Credentials.ps1` — one-time interactive script that prompts for NAS
+  credentials and stores them in Windows Credential Manager.
+- `README.md` and `.gitignore` for the repo.
+
+### Changed
+- `Drive_Icons.reg` is now tracked in the repo (removed from `.gitignore`)
+  and included in `README.md`'s file list, rather than being treated as a
+  local-only file.
+- `shares.ps1` no longer contains a hardcoded username/password. It now
+  relies entirely on the credential stored via `Setup-Credentials.ps1`,
+  so the script is safe to commit to source control.
+
+### Fixed
+- Stray File Explorer window left open after `shares.ps1` finished: the script
+  no longer launches `explorer.exe` itself after the icon refresh, since Windows
+  restarts the shell automatically. It only starts it manually as a fallback if
+  the shell has not returned after a few seconds.
+- False "could not confirm <drive> was released" warnings: the release check in
+  `shares.ps1` now uses the `net use` exit code instead of matching error
+  text, so it no longer depends on exact Windows wording.
+- `Setup-AutoMapTask.ps1` scheduled task reverted to running **non-elevated**.
+  Running it elevated caused drives to be mapped into a separate elevated
+  logon session, making them invisible in normal Explorer windows, and
+  triggered an unwanted Explorer restart when the (now-successful) registry
+  import ran.
+
+## [0.4.0] - 2026-08-02
+
+### Added
+- `Setup-AutoMapTask.ps1` to register a Scheduled Task that runs
+  `shares.ps1` ~30 seconds after logon, working around Windows' unreliable
+  built-in reconnect-at-logon behaviour for non-domain NAS shares.
+- Credentials saved to Windows Credential Manager via `cmdkey` so mapped
+  drives can reconnect without a password prompt after reboot.
+
+### Changed
+- `net use` calls no longer pass `/user:`/password inline; they rely on
+  the stored Credential Manager entry instead.
+
+## [0.3.0] - 2026-07-28
+
+### Added
+- Retry/backoff logic when deleting existing mappings, verifying each
+  drive letter is actually released before moving on.
+- Retry logic when mapping a drive: on error 85 ("device already in use"),
+  force-delete and retry up to 3 times before logging a failure.
+
+### Fixed
+- Intermittent `System error 85` when a drive letter hadn't been fully
+  released before the script tried to remap it.
+
+## [0.2.0] - 2026-07-28
+
+### Changed
+- Reverted to explicit NAS credentials (`/user:` + password) instead of
+  relying on the current Windows login, since the NAS account differs
+  from the Windows account.
+- Robust script-directory resolution (`$ScriptDir`) added, falling back
+  from `$PSScriptRoot` to `$MyInvocation.MyCommand.Path` to the current
+  location, to fix `Drive_Icons.reg` not being found depending on how
+  the script was launched. Added debug output showing the resolved path.
+
+## [0.1.0] - Initial version
+
+### Added
+- Base script to map a set of Synology NAS shares to drive letters via
+  `net use`, originally using `Get-Credential` to prompt for credentials
+  interactively.
+- Drive icon import from `Drive_Icons.reg` after mapping completes.
+- Failure logging to a timestamped `MapMediaShares_<timestamp>.log` file.

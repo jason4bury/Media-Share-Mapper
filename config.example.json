@@ -1,0 +1,17 @@
+{
+  "_readme": "Media Share Mapper settings, kept out of the repo. Drive is a letter. Share is a share name on NasHost, a folder inside one (music/live) or a full UNC path. Icon is optional: a file name in IconFolder or a full path to a .ico file. In paths, write each backslash twice.",
+
+  "NasHost": "nas",
+  "WaitForNasSeconds": 60,
+  "IconFolder": "C:\\Icons\\Drives",
+
+  "Drives": [
+    { "Drive": "M", "Share": "music",  "Icon": "Music.ico" },
+    { "Drive": "V", "Share": "video",  "Icon": "Movies.ico" },
+    { "Drive": "P", "Share": "photo",  "Icon": "" }
+  ],
+
+  "OtherDriveIcons": [
+    { "Drive": "C", "Icon": "Drives.ico" }
+  ]
+}

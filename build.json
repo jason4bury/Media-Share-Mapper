@@ -1,0 +1,16 @@
+{
+  "AppName": "Media Share Mapper",
+  "EntryScript": "src\\Media-Share-Mapper.ps1",
+  "Icon": "assets\\Media-Share-Mapper.ico",
+  "Side": "Home",
+  "IncludeFiles": [],
+  "Description": "PowerShell console tool for mapping NAS shares to drive letters and keeping them connected",
+  "Ps2exe": {
+    "STA": false,
+    "NoConsole": false,
+    "NoOutput": false,
+    "NoError": false,
+    "NoConfigFile": true,
+    "RequireAdmin": false
+  }
+}

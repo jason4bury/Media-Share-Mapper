@@ -1,0 +1,28 @@
+# Your settings: NAS name, share paths and icon paths. Never commit them.
+# The example to copy is config.example.json.
+config.local.json
+.env
+
+# Builds live in ..\Builds\, outside the repo. Safety net in case one lands here.
+Builds/
+*.exe
+
+# Logs (the app writes its own to %APPDATA%\Media Share Mapper\Logs; these catch
+# older versions' logs beside the script and Build-Exe.log)
+*.log
+
+# Registry exports can hold your local icon paths
+*.reg
+
+# Temp files and editor backups
+*.tmp
+*.bak*
+
+# Windows clutter
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Editor
+.vscode/
+*.swp
