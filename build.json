@@ -4,7 +4,7 @@
   "Icon": "assets\\Media-Share-Mapper.ico",
   "Side": "Home",
   "IncludeFiles": [],
-  "Description": "PowerShell console tool for mapping NAS shares to drive letters and keeping them connected",
+  "Description": "PowerShell/console tool for mapping NAS shares to drive letters and keeping them connected",
   "Ps2exe": {
     "STA": false,
     "NoConsole": false,
