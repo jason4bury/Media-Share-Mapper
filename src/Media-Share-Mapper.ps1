@@ -64,7 +64,7 @@ param(
 )
 
 $AppName    = 'Media Share Mapper'
-$AppVersion = '1.00'
+$AppVersion = '1.01'
 $Copyright  = 'Copyright (c) 2026 Jason Rhodes'
 $RepoUrl    = 'https://github.com/jason4bury/Media-Share-Mapper'
 $TaskName   = 'Media Share Mapper'
@@ -77,25 +77,15 @@ $ConfigName = 'config.local.json'
 #  Where we are running from
 # ---------------------------------------------------------------------------
 
-# Running as an exe built with ps2exe, or as a .ps1 in PowerShell?
-$HostExe = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-$IsExe   = (Split-Path -Leaf $HostExe) -notmatch '^(powershell|pwsh|powershell_ise)\.exe$'
+# There's no exe from v1.01: this script is the app, in a release folder
+# (Builds\Media Share Mapper v<version>\ or wherever the zip was unpacked) or in
+# the repo's src\ folder.
+$ScriptFile = if ($PSCommandPath) { $PSCommandPath } else { $MyInvocation.MyCommand.Path }
+$AppFolder  = Split-Path -Parent $ScriptFile
 
-# $PSScriptRoot can be blank depending on how the script is started, and is
-# always blank inside an exe.
-if ($IsExe) {
-    $AppFolder = Split-Path -Parent $HostExe
-}
-elseif ($PSScriptRoot) {
-    $AppFolder = $PSScriptRoot
-}
-elseif ($MyInvocation.MyCommand.Path) {
-    $AppFolder = Split-Path -Parent $MyInvocation.MyCommand.Path
-}
-else {
-    $AppFolder = (Get-Location).Path
-}
-$ScriptFile = if ($IsExe) { $HostExe } else { $MyInvocation.MyCommand.Path }
+# The sign-in task and the "run as admin" restart always use Windows PowerShell 5.1,
+# whatever started this run, so the task keeps working if PowerShell 7 is removed.
+$PowerShellExe = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 
 # ---------------------------------------------------------------------------
 #  Windows API calls
@@ -162,12 +152,6 @@ namespace MediaShareMapper
         [DllImport("shell32.dll")]
         private static extern void SHChangeNotify(int eventId, int flags, IntPtr item1, IntPtr item2);
 
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetConsoleWindow();
-
-        [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
         private const int RESOURCETYPE_DISK = 1;
         private const int CONNECT_UPDATE_PROFILE = 1;   // remember the drive (persistent)
         private const int CRED_TYPE_DOMAIN_PASSWORD = 2; // the type cmdkey /add makes
@@ -220,12 +204,6 @@ namespace MediaShareMapper
         public static void RefreshIcons()
         {
             SHChangeNotify(0x08000000, 0, IntPtr.Zero, IntPtr.Zero); // SHCNE_ASSOCCHANGED
-        }
-
-        public static void HideConsole()
-        {
-            IntPtr hWnd = GetConsoleWindow();
-            if (hWnd != IntPtr.Zero) { ShowWindow(hWnd, 0); }
         }
     }
 }
@@ -291,7 +269,7 @@ function Save-RunLog {
 function Write-Banner {
     param([string]$Title)
     if ($Quiet) { return }
-    # In the exe, Clear-Host throws when output is redirected (no real console).
+    # Clear-Host throws when output is redirected (no real console).
     try { Clear-Host } catch { Write-Verbose $_.Exception.Message }
     Write-Host ''
     Write-Host '  ==========================================' -ForegroundColor Cyan
@@ -344,8 +322,8 @@ $ExampleConfig = @'
 }
 '@
 
-# Settings live in %APPDATA%\Media Share Mapper. A copy next to the exe or script
-# is used instead if there is one there (handy for a portable copy).
+# Settings live in %APPDATA%\Media Share Mapper. A copy next to the script is used
+# instead if there is one there (handy for a portable copy).
 function Get-ConfigPath {
     $beside = Join-Path $AppFolder $ConfigName
     if (Test-Path -LiteralPath $beside) { return $beside }
@@ -751,12 +729,7 @@ function Install-MapTask {
         Write-Status 'Creating the sign-in task needs Administrator rights. Windows will ask for permission.' Yellow
         $taskArgs = "-Action InstallTask -TaskUser `"$user`""
         try {
-            if ($IsExe) {
-                $p = Start-Process -FilePath $HostExe -ArgumentList $taskArgs -Verb RunAs -Wait -PassThru
-            }
-            else {
-                $p = Start-Process -FilePath $HostExe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptFile`" $taskArgs" -Verb RunAs -Wait -PassThru
-            }
+            $p = Start-Process -FilePath $PowerShellExe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$ScriptFile`" $taskArgs" -Verb RunAs -Wait -PassThru
             if ($p.ExitCode -eq 0) { Write-Status 'The sign-in task was created.' Green }
             else { Write-Status 'The sign-in task was not created; see the other window for why.' Red }
             return $p.ExitCode
@@ -767,13 +740,8 @@ function Install-MapTask {
         }
     }
 
-    if ($IsExe) {
-        $action = New-ScheduledTaskAction -Execute "`"$HostExe`"" -Argument '-Action Map -Quiet'
-    }
-    else {
-        $action = New-ScheduledTaskAction -Execute $HostExe `
-            -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptFile`" -Action Map -Quiet"
-    }
+    $action = New-ScheduledTaskAction -Execute $PowerShellExe `
+        -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$ScriptFile`" -Action Map -Quiet"
 
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
     $trigger.Delay = 'PT30S'
@@ -799,13 +767,45 @@ function Install-MapTask {
     Write-Status "Created the '$TaskName' task for $user." Green
     Write-Status 'It maps the drives quietly 30 seconds after you sign in. Logs go to:' Green
     Write-Status "  $LogFolder" Green
-    if ($IsExe) {
-        Write-Status "The task runs this exe from where it is now. If you move or rename it, set this up again." DarkGray
-    }
-    else {
-        Write-Status "The task runs this script from where it is now. If you move it, set this up again." DarkGray
-    }
+    Write-Status 'The task runs this copy of the script:' DarkGray
+    Write-Status "  $ScriptFile" DarkGray
+    Write-Status 'After moving it or updating to a new version, choose this option again from the new copy.' DarkGray
     return 0
+}
+
+# Returns the script (or exe) the sign-in task runs, or $null when there's no task or it
+# can't be read. Reading it needs no admin rights for a task made for this account.
+function Get-MapTaskTarget {
+    try {
+        $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction Stop
+    }
+    catch {
+        return $null
+    }
+    $taskAction = @($task.Actions)[0]
+    if (-not $taskAction) { return $null }
+    if ([string]$taskAction.Arguments -match '-File\s+"([^"]+)"') { return $Matches[1] }
+    return ([string]$taskAction.Execute).Trim('"')   # v1.00's exe
+}
+
+# A note for the menu when the sign-in task runs a different copy (an older version, or
+# one that has been moved or deleted). Worked out once per run; option 3 or 4 clears it.
+$script:TaskNote = $null
+$script:TaskChecked = $false
+function Get-MapTaskNote {
+    if (-not $script:TaskChecked) {
+        $script:TaskChecked = $true
+        $target = Get-MapTaskTarget
+        if ($target -and $target -ne $ScriptFile) {
+            $script:TaskNote = if (Test-Path -LiteralPath $target) {
+                "The sign-in task runs another copy: $target"
+            }
+            else {
+                "The sign-in task runs a file that's no longer there: $target"
+            }
+        }
+    }
+    return $script:TaskNote
 }
 
 function Uninstall-MapTask {
@@ -839,6 +839,7 @@ function Show-About {
     Write-Status 'MIT licence'
     Write-Status $RepoUrl
     Write-Status ''
+    Write-Status "Script   : $ScriptFile"
     Write-Status "Settings : $(Get-ConfigPath)"
     Write-Status "Logs     : $LogFolder"
     return 0
@@ -856,6 +857,12 @@ function Show-Menu {
         $configPath = Get-ConfigPath
         if (-not (Test-Path -LiteralPath $configPath)) {
             Write-Host '  First time? Start with 6 to fill in your settings, then 2, then 1.' -ForegroundColor Yellow
+            Write-Host ''
+        }
+        $taskNote = Get-MapTaskNote
+        if ($taskNote) {
+            Write-Host "  $taskNote" -ForegroundColor Yellow
+            Write-Host '  Choose 3 to point it at this version.' -ForegroundColor Yellow
             Write-Host ''
         }
         Write-Host '  1  Map drives now'
@@ -876,8 +883,8 @@ function Show-Menu {
             '1' { Write-Banner 'Map drives'; [void](Invoke-DriveMapping); Wait-ForEnter }
             'R' { Write-Banner 'Remap every drive'; $script:Force = $true; [void](Invoke-DriveMapping); $script:Force = $false; Wait-ForEnter }
             '2' { Write-Banner 'Save NAS sign-in'; [void](Save-NasCredential); Wait-ForEnter }
-            '3' { Write-Banner 'Map drives at sign-in'; [void](Install-MapTask); Wait-ForEnter }
-            '4' { Write-Banner 'Stop mapping at sign-in'; [void](Uninstall-MapTask); Wait-ForEnter }
+            '3' { Write-Banner 'Map drives at sign-in'; [void](Install-MapTask); $script:TaskChecked = $false; $script:TaskNote = $null; Wait-ForEnter }
+            '4' { Write-Banner 'Stop mapping at sign-in'; [void](Uninstall-MapTask); $script:TaskChecked = $false; $script:TaskNote = $null; Wait-ForEnter }
             '5' { Write-Banner 'Drive icons'; [void](Invoke-DriveIconUpdate); Wait-ForEnter }
             '6' { Edit-Config; Start-Sleep -Seconds 1 }
             'L' {
@@ -895,12 +902,7 @@ function Show-Menu {
 #  Start
 # ---------------------------------------------------------------------------
 
-if ($Quiet) {
-    # The scheduled task starts a hidden PowerShell, but an exe opens its own
-    # console window; hide it.
-    [MediaShareMapper.Native]::HideConsole()
-}
-else {
+if (-not $Quiet) {
     try { $Host.UI.RawUI.WindowTitle = "$AppName v$AppVersion" } catch { Write-Verbose $_.Exception.Message }
 }
 

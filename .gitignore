@@ -4,11 +4,13 @@ config.local.json
 .env
 
 # Builds live in ..\Builds\, outside the repo. Safety net in case one lands here.
+# (*.lnk: Build.cmd and the release .cmd make shortcuts, which hold full paths on this PC.)
 Builds/
 *.exe
+*.lnk
 
 # Logs (the app writes its own to %APPDATA%\Media Share Mapper\Logs; these catch
-# older versions' logs beside the script and Build-Exe.log)
+# older versions' logs beside the script and Build.log)
 *.log
 
 # Registry exports can hold your local icon paths

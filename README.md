@@ -6,7 +6,7 @@
 
 Maps your NAS shares to drive letters on Windows and keeps them connected after every restart.
 
-![Version](https://img.shields.io/badge/version-v1.00-blue) ![Platform](https://img.shields.io/badge/platform-Windows-0078D6) ![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391FE) ![Licence](https://img.shields.io/badge/licence-MIT-green)
+![Version](https://img.shields.io/badge/version-v1.01-blue) ![Platform](https://img.shields.io/badge/platform-Windows-0078D6) ![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391FE) ![Licence](https://img.shields.io/badge/licence-MIT-green)
 
 ## ✨ Features
 
@@ -28,30 +28,37 @@ Windows' own "reconnect at sign-in" for network drives is unreliable with a home
 
 ## 📦 Installation
 
-**Exe:** download `Media Share Mapper v1.00.exe` from the [latest release](../../releases/latest), put it somewhere it can stay (the sign-in task runs it from there) and double-click it.
+1. Download `Media-Share-Mapper-v1.01.zip` from the [latest release](../../releases/latest) and unzip it somewhere it can stay, because the sign-in task runs the script from there.
+2. Double-click **Media Share Mapper.cmd** in the unzipped folder. It makes a **Media Share Mapper** shortcut there and in the Start menu, and opens the menu in a console window. From then on, use the shortcut, the Start menu or a pinned taskbar button.
 
-**Script:** clone or download the repo, then double-click **`Start Media Share Mapper.cmd`**. It runs the script with an execution-policy bypass for that run only; no Windows settings are changed. If you downloaded a zip and Windows blocks the files, right-click the zip, choose **Properties**, tick **Unblock**, then unzip it again.
+Nothing is installed and no Windows settings are changed. The shortcut runs the script with PowerShell's execution policy bypassed for that run only.
 
-### Build the exe
-
-Builds use the standard build script, which reads `build.json`, runs PSScriptAnalyzer, compiles a console exe with [ps2exe](https://github.com/MScholtes/PS2EXE) and saves it to the project's `Builds\` folder (outside the repo) as `Media Share Mapper v<version>.exe`:
+**From the repo:** clone it and double-click **Start Media Share Mapper.cmd**, or run:
 
 ```powershell
-E:\Created\_shared\Build-Tool.ps1 -Project "E:\Created\Home\Media-Share-Mapper"
+powershell -ExecutionPolicy Bypass -File .\src\Media-Share-Mapper.ps1
 ```
 
-Until the shared build script is in place, double-click `Build-Exe.cmd` in the repo folder instead. It checks the script for syntax errors, installs ps2exe for your user the first time and saves its output to `Build-Exe.log`. The version comes from `$AppVersion` at the top of `src\Media-Share-Mapper.ps1`, which matches the newest CHANGELOG entry.
+**Updating:** unzip the new version, start it, and choose **3 Map drives when I sign in** again so the sign-in task runs the new copy. The menu reminds you while the task still points at an older copy. Your settings, sign-in and icons carry over.
+
+### Why no exe
+
+Home tools used to ship as PS2EXE exes, and antivirus programs (ESET among them) kept flagging those exes as generic trojans by mistake. A plain script and a shortcut give the same one-click start without the false alarms, and you can read exactly what runs. Up to v1.00 this tool was `Media Share Mapper v1.00.exe`; from v1.01 it's the script release above.
+
+### Build a release
+
+Double-click **Build.cmd** in the repo folder. It reads `build.json`, checks every script for syntax errors and that `$AppVersion` matches the newest `CHANGELOG.md` entry, runs PSScriptAnalyzer if it's installed, copies the release files into `..\Builds\Media Share Mapper v<version>\`, zips that folder for the GitHub release, refreshes `..\Builds\Media Share Mapper.lnk` and scans the result with ESET's command-line scanner if it's installed. Everything it shows is saved to `Build.log`.
 
 ## 🚀 Usage
 
-Start it and pick from the menu. The first time, go through these in order:
+Start it (the shortcut, the Start menu, or **Media Share Mapper.cmd**) and pick from the menu. The first time, go through these in order:
 
 1. **6 Edit settings** opens your settings file in Notepad (it's created from the example the first time). Put in your NAS name, drive letters and shares. See Configuration below.
 2. **2 Save NAS sign-in** asks for the NAS user name and password and saves them in Windows Credential Manager. Use the NAS account, which may not be your Windows account. Run it again whenever the NAS password changes.
 3. **1 Map drives now** maps them. **R** does the same but disconnects and remaps every drive, which is handy after a password change.
 4. **3 Map drives when I sign in** creates the sign-in task. Windows asks for admin rights; the task itself runs as you, not as admin, because drives mapped by an admin process don't show in normal Explorer windows.
 
-**5 Apply drive icons** sets the icons on their own (mapping does this too). **L** opens the logs folder and **A** shows the version and where your settings are.
+**5 Apply drive icons** sets the icons on their own (mapping does this too). **L** opens the logs folder and **A** shows the version and where the script, your settings and the logs are.
 
 ### Command line
 
@@ -61,13 +68,14 @@ Start it and pick from the menu. The first time, go through these in order:
 .\src\Media-Share-Mapper.ps1 -Action Map -Quiet     # no window output; what the sign-in task runs
 ```
 
-`-Action` is one of `Menu` (the default), `Map`, `SaveCredential`, `InstallTask`, `RemoveTask`, `ApplyIcons`, `EditConfig` and `About`. Add `-NoPause` to close without waiting for Enter. The exe takes the same options. It exits with 0 when everything worked, 1 when a drive failed and 2 when the settings need fixing.
+`-Action` is one of `Menu` (the default), `Map`, `SaveCredential`, `InstallTask`, `RemoveTask`, `ApplyIcons`, `EditConfig` and `About`. Add `-NoPause` to close without waiting for Enter. **Media Share Mapper.cmd** in a release folder takes the same options, e.g. `"Media Share Mapper.cmd" -Action Map -Force`. It exits with 0 when everything worked, 1 when a drive failed and 2 when the settings need fixing.
 
 ### Troubleshooting
 
 - **A drive says FAILED**: the reason is shown next to it and saved in the logs folder. Error 1326 or 86 means the saved password is wrong (use option 2 again). Error 67 means the share name is wrong. Error 1219 means Windows is already connected to the NAS under another user name.
-- **Drives map when I run it, but not at sign-in**: check the newest `Map_*.log` in the logs folder. If you moved or renamed the exe or script, or updated to a new version, run option 3 again so the task points at the right file.
-- **"Running scripts is disabled"**: start it with `Start Media Share Mapper.cmd`, or use the exe.
+- **Drives map when I run it, but not at sign-in**: check the newest `Map_*.log` in the logs folder. If you moved the script or updated to a new version, run option 3 again from the copy you use now, so the task points at the right file. The menu shows a yellow note while the task runs a different copy.
+- **"Running scripts is disabled"**: start it with **Media Share Mapper.cmd** or its shortcut, which bypass the execution policy for that run only.
+- **Windows blocks the files** from a downloaded zip: **Media Share Mapper.cmd** unblocks the tool's own files when it makes the shortcut. If Windows won't run the .cmd itself, right-click the zip, choose **Properties**, tick **Unblock**, then unzip it again.
 - **Icons haven't changed**: close and reopen Explorer windows. If they still don't change, sign out and back in.
 
 ## ⚙️ Configuration
@@ -83,7 +91,7 @@ Your settings and logs live in:
 | `config.local.json` | your NAS name, drive letters, shares and icons |
 | `Logs\` | a log for every sign-in run and every run where a drive failed (newest 20 kept) |
 
-A `config.local.json` next to the exe or script is used instead if there is one, for a portable copy. It's gitignored, so your NAS name and share paths stay on your PC. [`config.example.json`](config.example.json) shows the layout:
+A `config.local.json` next to the script is used instead if there is one, for a portable copy. It's gitignored, so your NAS name and share paths stay on your PC. [`config.example.json`](config.example.json) shows the layout:
 
 | Setting | What it does |
 | --- | --- |

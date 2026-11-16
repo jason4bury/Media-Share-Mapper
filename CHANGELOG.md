@@ -2,10 +2,33 @@
 
 All notable changes to Media Share Mapper are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), with versions in the form
-`v<major>.<two-digit minor>`, matching the exe names. History from before the v1.00
+`v<major>.<two-digit minor>`, matching the release folder names. History from before the v1.00
 renumbering is in [docs/HISTORY-before-1.00.md](docs/HISTORY-before-1.00.md).
 
 ## [Unreleased]
+
+## [1.01] - 2026-11-16
+
+### Changed
+- **No exe any more.** Antivirus programs (ESET among them) kept flagging the PS2EXE exe as a
+  generic trojan by mistake, so the release is now the script itself: download
+  `Media-Share-Mapper-v1.01.zip`, unzip it and double-click **Media Share Mapper.cmd**. It makes
+  a shortcut there and in the Start menu and opens the menu in a console window. Options given
+  to the .cmd go straight to the script. Settings, logs, the saved sign-in and icons are
+  unchanged.
+- The sign-in task runs the script with Windows PowerShell 5.1, hidden, from wherever you
+  chose option 3. After updating, choose option 3 again from the new copy.
+- `Build.cmd` replaces `Build-Exe.cmd`: it makes the release folder, its zip and
+  `Builds\Media Share Mapper.lnk`, and ESET-scans them.
+- About (option A) also shows which script is running.
+
+### Added
+- The menu shows a yellow note when the sign-in task runs a different copy (an older version,
+  or one that has been moved or deleted), such as the v1.00 exe.
+
+### Removed
+- The exe-only code: finding its own folder from the exe and hiding the exe's console window
+  at sign-in.
 
 ## [1.00] - 2026-11-07
 
