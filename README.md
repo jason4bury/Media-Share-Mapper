@@ -6,7 +6,7 @@
 
 Maps your NAS shares to drive letters on Windows and keeps them connected after every restart.
 
-![Version](https://img.shields.io/badge/version-v1.01-blue) ![Platform](https://img.shields.io/badge/platform-Windows-0078D6) ![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391FE) ![Licence](https://img.shields.io/badge/licence-MIT-green)
+![Version](https://img.shields.io/badge/version-v1.02-blue) ![Platform](https://img.shields.io/badge/platform-Windows-0078D6) ![PowerShell](https://img.shields.io/badge/PowerShell-5.1-5391FE) ![Licence](https://img.shields.io/badge/licence-MIT-green)
 
 ## ✨ Features
 
@@ -28,7 +28,7 @@ Windows' own "reconnect at sign-in" for network drives is unreliable with a home
 
 ## 📦 Installation
 
-1. Download `Media-Share-Mapper-v1.01.zip` from the [latest release](../../releases/latest) and unzip it somewhere it can stay, because the sign-in task runs the script from there.
+1. Download `Media-Share-Mapper-v1.02.zip` from the [latest release](../../releases/latest) and unzip it somewhere it can stay, because the sign-in task runs the script from there.
 2. Double-click **Media Share Mapper.cmd** in the unzipped folder. It makes a **Media Share Mapper** shortcut there and in the Start menu, and opens the menu in a console window. From then on, use the shortcut, the Start menu or a pinned taskbar button.
 
 Nothing is installed and no Windows settings are changed. The shortcut runs the script with PowerShell's execution policy bypassed for that run only.
@@ -58,7 +58,7 @@ Start it (the shortcut, the Start menu, or **Media Share Mapper.cmd**) and pick 
 3. **1 Map drives now** maps them. **R** does the same but disconnects and remaps every drive, which is handy after a password change.
 4. **3 Map drives when I sign in** creates the sign-in task. Windows asks for admin rights; the task itself runs as you, not as admin, because drives mapped by an admin process don't show in normal Explorer windows.
 
-**5 Apply drive icons** sets the icons on their own (mapping does this too). **L** opens the logs folder and **A** shows the version and where the script, your settings and the logs are.
+**5 Apply drive icons** sets the icons on their own (mapping does this too). **L** opens the logs folder, **H** shows Help (how it works, the settings and troubleshooting) and **A** shows the version and where the script, your settings and the logs are.
 
 ### Command line
 
@@ -68,7 +68,7 @@ Start it (the shortcut, the Start menu, or **Media Share Mapper.cmd**) and pick 
 .\src\Media-Share-Mapper.ps1 -Action Map -Quiet     # no window output; what the sign-in task runs
 ```
 
-`-Action` is one of `Menu` (the default), `Map`, `SaveCredential`, `InstallTask`, `RemoveTask`, `ApplyIcons`, `EditConfig` and `About`. Add `-NoPause` to close without waiting for Enter. **Media Share Mapper.cmd** in a release folder takes the same options, e.g. `"Media Share Mapper.cmd" -Action Map -Force`. It exits with 0 when everything worked, 1 when a drive failed and 2 when the settings need fixing.
+`-Action` is one of `Menu` (the default), `Map`, `SaveCredential`, `InstallTask`, `RemoveTask`, `ApplyIcons`, `EditConfig`, `Help` and `About`. Add `-NoPause` to close without waiting for Enter. **Media Share Mapper.cmd** in a release folder takes the same options, e.g. `"Media Share Mapper.cmd" -Action Map -Force`. It exits with 0 when everything worked, 1 when a drive failed and 2 when the settings need fixing.
 
 ### Troubleshooting
 

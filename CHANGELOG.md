@@ -7,6 +7,13 @@ renumbering is in [docs/HISTORY-before-1.00.md](docs/HISTORY-before-1.00.md).
 
 ## [Unreleased]
 
+## [1.02] - 2026-11-19
+
+### Added
+- **Help.** **H** in the menu (or `-Action Help`) shows how it works: the first-time steps, what each
+  menu option does, the settings, and what to do when a drive fails or the icons don't change.
+- About notes what's new in 1.02.
+
 ## [1.01] - 2026-11-16
 
 ### Changed

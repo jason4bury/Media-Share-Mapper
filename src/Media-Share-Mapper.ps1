@@ -14,7 +14,7 @@
 
 .PARAMETER Action
     What to do. Menu (the default), Map, SaveCredential, InstallTask,
-    RemoveTask, ApplyIcons, EditConfig or About.
+    RemoveTask, ApplyIcons, EditConfig, Help or About.
 
 .PARAMETER Quiet
     No menu, colours or pause at the end; results go to the log only. Used by
@@ -49,7 +49,7 @@
     Justification = 'Script-level parameter read inside Install-MapTask.')]
 [CmdletBinding()]
 param(
-    [ValidateSet('Menu', 'Map', 'SaveCredential', 'InstallTask', 'RemoveTask', 'ApplyIcons', 'EditConfig', 'About')]
+    [ValidateSet('Menu', 'Map', 'SaveCredential', 'InstallTask', 'RemoveTask', 'ApplyIcons', 'EditConfig', 'Help', 'About')]
     [string]$Action = 'Menu',
 
     [switch]$Quiet,
@@ -64,7 +64,7 @@ param(
 )
 
 $AppName    = 'Media Share Mapper'
-$AppVersion = '1.01'
+$AppVersion = '1.02'
 $Copyright  = 'Copyright (c) 2026 Jason Rhodes'
 $RepoUrl    = 'https://github.com/jason4bury/Media-Share-Mapper'
 $TaskName   = 'Media Share Mapper'
@@ -828,12 +828,48 @@ function Uninstall-MapTask {
 }
 
 # ---------------------------------------------------------------------------
-#  About and menu
+#  Help, About and menu
 # ---------------------------------------------------------------------------
+
+function Show-Help {
+    <# How the tool works, in the console's own colours. Same wording as the README's Usage section. #>
+    $topics = @(
+        ,@('First time', @(
+            '6  Edit settings: put in your NAS name, drive letters and shares (Notepad opens the file).',
+            '2  Save NAS sign-in: the NAS user name and password, kept in Windows Credential Manager.',
+            '1  Map drives now: maps them. R does the same but remaps every drive.',
+            '3  Map drives when I sign in: makes the sign-in task (Windows asks for admin rights once).'))
+        ,@('The menu', @(
+            '1 / R  Map drives now. Drives already connected to the right share are left alone; R remaps them all.',
+            '2      Save NAS sign-in. Run it again whenever the NAS password changes.',
+            '3 / 4  Turn mapping at sign-in on or off. The task runs as you, not as admin, so the drives show in Explorer.',
+            '5      Apply drive icons on their own (mapping does this too).',
+            '6      Edit settings.',
+            'L      Open the logs folder.     H  This help.     A  About.     Q  Quit.'))
+        ,@('Settings', @(
+            'NasHost: the NAS name or address. WaitForNasSeconds: how long to wait for it at sign-in.',
+            'Drives: each has a Drive letter, a Share (a share name, a folder inside one such as music/live, or a full \\NAS\share path) and an optional Icon.',
+            'IconFolder: where Icon file names are looked for. OtherDriveIcons: icons for drives that aren''t mapped, such as C.',
+            'In the settings file, write each backslash twice.'))
+        ,@('If something goes wrong', @(
+            'A drive says FAILED: the reason is next to it and in the logs. Error 1326 or 86: the saved password is wrong (option 2). 67: the share name is wrong. 1219: Windows is already connected to the NAS under another user name.',
+            'Drives map now but not at sign-in: if you moved the script or updated it, choose 3 again from the copy you use now.',
+            'Icons haven''t changed: close and reopen Explorer windows, or sign out and back in.'))
+    )
+    foreach ($t in $topics) {
+        Write-Host "  $($t[0])" -ForegroundColor Cyan
+        foreach ($line in $t[1]) { Write-Host "    $line" }
+        Write-Host ''
+    }
+    Write-Status "More in the README: $RepoUrl" DarkGray
+    return 0
+}
 
 function Show-About {
     Write-Status "$AppName v$AppVersion"
     Write-Status 'Maps NAS shares to drive letters and keeps them connected.'
+    Write-Status ''
+    Write-Status 'New in 1.02: H shows Help in the menu (how it works, the settings and what to do if a drive fails).'
     Write-Status ''
     Write-Status $Copyright
     Write-Status 'MIT licence'
@@ -873,6 +909,7 @@ function Show-Menu {
         Write-Host '  5  Apply drive icons'
         Write-Host '  6  Edit settings'
         Write-Host '  L  Open the logs folder'
+        Write-Host '  H  Help'
         Write-Host '  A  About'
         Write-Host '  Q  Quit'
         Write-Host ''
@@ -891,6 +928,7 @@ function Show-Menu {
                 if (-not (Test-Path -LiteralPath $LogFolder)) { New-Item -ItemType Directory -Path $LogFolder -Force | Out-Null }
                 Start-Process -FilePath 'explorer.exe' -ArgumentList "`"$LogFolder`""
             }
+            'H' { Write-Banner 'Help'; [void](Show-Help); Wait-ForEnter }
             'A' { Write-Banner 'About'; [void](Show-About); Wait-ForEnter }
             'Q' { return 0 }
             ''  { return 0 }
@@ -924,6 +962,7 @@ try {
         'RemoveTask'     { Write-Banner 'Stop mapping at sign-in'; $exitCode = Uninstall-MapTask; Wait-ForEnter }
         'ApplyIcons'     { Write-Banner 'Drive icons'; $exitCode = Invoke-DriveIconUpdate; Wait-ForEnter }
         'EditConfig'     { Edit-Config }
+        'Help'           { Write-Banner 'Help'; $exitCode = Show-Help; Wait-ForEnter }
         'About'          { Write-Banner 'About'; $exitCode = Show-About; Wait-ForEnter }
     }
 }
